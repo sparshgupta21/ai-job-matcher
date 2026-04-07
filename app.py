@@ -16,248 +16,245 @@ from utils import setup_logging, get_app_version
 setup_logging()
 
 # ─────────────────────────────────────────────
-# Custom CSS for Premium Dark Theme
+# Custom CSS - works on both HF Spaces & local
 # ─────────────────────────────────────────────
 
 CUSTOM_CSS = """
-/* Import Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-/* Root Theme Overrides */
-:root {
-    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    --accent-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-    --card-bg: rgba(30, 32, 48, 0.8);
-    --card-border: rgba(102, 126, 234, 0.2);
-    --glow-color: rgba(102, 126, 234, 0.3);
-}
-
-/* Global Styles */
+/* ── Global ──────────────────────────────── */
 .gradio-container {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
-    max-width: 1200px !important;
+    max-width: 1100px !important;
     margin: 0 auto !important;
 }
 
-/* Header Banner */
+/* ── Header Banner ───────────────────────── */
 #app-header {
     text-align: center;
-    padding: 2rem 1rem;
-    background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+    padding: 2.5rem 1.5rem;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%);
     border-radius: 16px;
     margin-bottom: 1.5rem;
-    border: 1px solid rgba(102, 126, 234, 0.3);
-    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.15);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
     position: relative;
     overflow: hidden;
 }
-
-#app-header::before {
+#app-header::after {
     content: '';
     position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 60%);
-    animation: pulse-glow 4s ease-in-out infinite;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.15) 0%, transparent 70%);
+    pointer-events: none;
 }
-
-@keyframes pulse-glow {
-    0%, 100% { opacity: 0.5; transform: scale(1); }
-    50% { opacity: 1; transform: scale(1.05); }
-}
-
 #app-header h1 {
-    font-size: 2.2rem !important;
+    font-size: 2.4rem !important;
     font-weight: 800 !important;
-    background: linear-gradient(135deg, #667eea, #764ba2, #f093fb);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin: 0 0 0.5rem 0 !important;
-    position: relative;
-    z-index: 1;
+    color: #e0e7ff !important;
+    margin: 0 0 0.4rem 0 !important;
+    position: relative; z-index: 1;
+    letter-spacing: -0.5px;
 }
-
 #app-header p {
-    color: #a0a8c8 !important;
+    color: #94a3b8 !important;
     font-size: 1rem !important;
-    margin: 0 !important;
-    position: relative;
-    z-index: 1;
+    margin: 0.2rem 0 0 0 !important;
+    position: relative; z-index: 1;
+}
+#app-header .subtitle {
+    font-size: 0.85rem !important;
+    color: #64748b !important;
+    margin-top: 0.6rem !important;
 }
 
-/* Section headers */
-.section-header {
-    font-size: 1.1rem !important;
-    font-weight: 600 !important;
-    color: #b8c0e0 !important;
-    margin-bottom: 0.5rem !important;
-    padding-bottom: 0.5rem !important;
-    border-bottom: 2px solid rgba(102, 126, 234, 0.3) !important;
+/* ── Section headers ─────────────────────── */
+.section-title {
+    font-size: 1.15rem !important;
+    font-weight: 700 !important;
+    color: #c7d2fe !important;
+    padding: 0.6rem 0 !important;
+    margin: 0.8rem 0 0.2rem 0 !important;
+    border-bottom: 2px solid rgba(99, 102, 241, 0.3) !important;
+    display: block;
 }
 
-/* Input styling */
-.gradio-container input,
+/* ── Inputs override ─────────────────────── */
+.gradio-container input[type="text"],
 .gradio-container textarea,
-.gradio-container select {
+.gradio-container .wrap input {
+    background: #1e1b4b !important;
+    color: #e2e8f0 !important;
+    border: 1px solid rgba(99, 102, 241, 0.35) !important;
     border-radius: 10px !important;
-    border: 1px solid rgba(102, 126, 234, 0.3) !important;
-    transition: all 0.3s ease !important;
 }
-
-.gradio-container input:focus,
+.gradio-container input[type="text"]:focus,
 .gradio-container textarea:focus {
-    border-color: #667eea !important;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15) !important;
+    border-color: #6366f1 !important;
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.2) !important;
+}
+.gradio-container input[type="text"]::placeholder,
+.gradio-container textarea::placeholder {
+    color: #6b7280 !important;
 }
 
-/* File upload area */
-.gradio-container .upload-area {
-    border: 2px dashed rgba(102, 126, 234, 0.4) !important;
+/* ── Dropdown / select ───────────────────── */
+.gradio-container .wrap.svelte-1sk0pyu,
+.gradio-container .secondary-wrap {
+    background: #1e1b4b !important;
+    border: 1px solid rgba(99, 102, 241, 0.35) !important;
+    border-radius: 10px !important;
+}
+.gradio-container .wrap.svelte-1sk0pyu input,
+.gradio-container .secondary-wrap input {
+    color: #e2e8f0 !important;
+}
+
+/* ── Labels ──────────────────────────────── */
+.gradio-container label,
+.gradio-container .label-wrap span,
+.gradio-container span.svelte-1gfkn6j {
+    color: #c7d2fe !important;
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+}
+.gradio-container .info {
+    color: #94a3b8 !important;
+}
+
+/* ── Block containers ────────────────────── */
+.gradio-container .block {
+    background: #0f172a !important;
+    border: 1px solid rgba(99, 102, 241, 0.15) !important;
     border-radius: 12px !important;
-    transition: all 0.3s ease !important;
 }
 
-.gradio-container .upload-area:hover {
-    border-color: #667eea !important;
-    background: rgba(102, 126, 234, 0.05) !important;
+/* ── File upload ─────────────────────────── */
+.gradio-container .upload-text {
+    color: #94a3b8 !important;
+}
+.gradio-container .upload-text span {
+    color: #94a3b8 !important;
 }
 
-/* Primary button */
+/* ── Primary button ──────────────────────── */
 #search-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%) !important;
     border: none !important;
     border-radius: 12px !important;
-    padding: 12px 32px !important;
-    font-size: 1.1rem !important;
-    font-weight: 600 !important;
-    color: white !important;
+    padding: 14px 36px !important;
+    font-size: 1.15rem !important;
+    font-weight: 700 !important;
+    color: #ffffff !important;
     cursor: pointer !important;
     transition: all 0.3s ease !important;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
-    text-transform: none !important;
-    min-height: 52px !important;
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4) !important;
+    min-height: 56px !important;
+    letter-spacing: 0.3px;
 }
-
 #search-btn:hover {
     transform: translateY(-2px) !important;
-    box-shadow: 0 6px 25px rgba(102, 126, 234, 0.5) !important;
+    box-shadow: 0 8px 30px rgba(99, 102, 241, 0.55) !important;
 }
-
 #search-btn:active {
     transform: translateY(0) !important;
 }
 
-/* Tab styling */
-.gradio-container .tabs {
-    border-radius: 12px !important;
-    overflow: hidden !important;
+/* ── Tabs ────────────────────────────────── */
+.gradio-container .tab-nav {
+    border-bottom: 2px solid rgba(99, 102, 241, 0.2) !important;
 }
-
 .gradio-container .tab-nav button {
     font-weight: 600 !important;
-    font-size: 0.95rem !important;
-    padding: 10px 20px !important;
+    font-size: 0.9rem !important;
+    padding: 10px 18px !important;
+    color: #94a3b8 !important;
     transition: all 0.3s ease !important;
+    border: none !important;
+    background: transparent !important;
 }
-
 .gradio-container .tab-nav button.selected {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-    color: white !important;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+    color: #ffffff !important;
+    border-radius: 8px 8px 0 0 !important;
 }
 
-/* Results markdown styling */
+/* ── Markdown results ────────────────────── */
+.gradio-container .prose,
+.gradio-container .markdown-text,
+.gradio-container .md {
+    color: #cbd5e1 !important;
+}
+.gradio-container .prose h2,
 .gradio-container .markdown-text h2 {
-    color: #c0c8e8 !important;
-    border-bottom: 2px solid rgba(102, 126, 234, 0.3) !important;
-    padding-bottom: 0.5rem !important;
+    color: #e0e7ff !important;
+    border-bottom: 1px solid rgba(99, 102, 241, 0.25) !important;
+    padding-bottom: 0.4rem !important;
 }
-
+.gradio-container .prose h3,
 .gradio-container .markdown-text h3 {
-    color: #b0b8d8 !important;
+    color: #c7d2fe !important;
 }
-
-.gradio-container .markdown-text code {
-    background: rgba(102, 126, 234, 0.15) !important;
-    color: #a8b4ff !important;
-    padding: 2px 8px !important;
-    border-radius: 6px !important;
-    font-size: 0.85em !important;
-}
-
+.gradio-container .prose a,
 .gradio-container .markdown-text a {
-    color: #667eea !important;
-    text-decoration: none !important;
+    color: #818cf8 !important;
     font-weight: 600 !important;
-    transition: color 0.3s ease !important;
 }
-
+.gradio-container .prose a:hover,
 .gradio-container .markdown-text a:hover {
-    color: #f093fb !important;
+    color: #c084fc !important;
 }
-
-.gradio-container .markdown-text table {
-    border-collapse: collapse !important;
-    width: 100% !important;
-    margin: 1rem 0 !important;
+.gradio-container .prose code,
+.gradio-container .markdown-text code {
+    background: rgba(99, 102, 241, 0.15) !important;
+    color: #a5b4fc !important;
+    padding: 2px 7px !important;
+    border-radius: 5px !important;
 }
-
-.gradio-container .markdown-text th {
-    background: rgba(102, 126, 234, 0.2) !important;
+.gradio-container .prose table th,
+.gradio-container .markdown-text table th {
+    background: rgba(99, 102, 241, 0.2) !important;
     padding: 10px !important;
-    text-align: left !important;
 }
-
-.gradio-container .markdown-text td {
+.gradio-container .prose table td,
+.gradio-container .markdown-text table td {
     padding: 8px 10px !important;
-    border-bottom: 1px solid rgba(102, 126, 234, 0.1) !important;
+    border-bottom: 1px solid rgba(99, 102, 241, 0.1) !important;
 }
 
-/* Accordion styling */
+/* ── Accordion ───────────────────────────── */
 .gradio-container .accordion {
-    border: 1px solid rgba(102, 126, 234, 0.2) !important;
-    border-radius: 10px !important;
-    margin-bottom: 0.5rem !important;
+    border: 1px solid rgba(99, 102, 241, 0.2) !important;
+    border-radius: 12px !important;
 }
 
-/* Info badges */
-.info-badge {
-    display: inline-block;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    margin: 2px;
-}
-
-.badge-api { background: rgba(79, 172, 254, 0.2); color: #4facfe; }
-.badge-demo { background: rgba(240, 147, 251, 0.2); color: #f093fb; }
-
-/* Footer */
+/* ── Footer ──────────────────────────────── */
 #app-footer {
     text-align: center;
-    padding: 1rem;
-    color: #606880;
-    font-size: 0.85rem;
-    margin-top: 1rem;
+    padding: 1.2rem;
+    margin-top: 1.5rem;
 }
+#app-footer p {
+    color: #64748b !important;
+    font-size: 0.82rem !important;
+    margin: 0.25rem 0 !important;
+}
+#app-footer a {
+    color: #818cf8 !important;
+    text-decoration: none !important;
+    font-weight: 600 !important;
+}
+#app-footer a:hover { color: #c084fc !important; }
 
-/* Responsive */
+/* ── Responsive ──────────────────────────── */
 @media (max-width: 768px) {
-    #app-header h1 { font-size: 1.6rem !important; }
+    #app-header h1 { font-size: 1.5rem !important; }
     #search-btn { width: 100% !important; }
 }
 
-/* Smooth scrolling */
+/* ── Smooth scrolling + loading ──────────── */
 html { scroll-behavior: smooth; }
-
-/* Loading animation */
-.generating {
-    border-color: #667eea !important;
-}
+.generating { border-color: #6366f1 !important; }
 """
 
 # ─────────────────────────────────────────────
@@ -267,24 +264,43 @@ html { scroll-behavior: smooth; }
 def create_app():
     """Create and return the Gradio Blocks app."""
 
-    theme = gr.themes.Soft(
-        primary_hue="indigo",
-        secondary_hue="purple",
-        neutral_hue="slate",
+    theme = gr.themes.Base(
+        primary_hue=gr.themes.colors.indigo,
+        secondary_hue=gr.themes.colors.purple,
+        neutral_hue=gr.themes.colors.slate,
         font=gr.themes.GoogleFont("Inter"),
     ).set(
-        body_background_fill="*neutral_950",
-        body_background_fill_dark="*neutral_950",
-        block_background_fill="*neutral_900",
-        block_background_fill_dark="*neutral_900",
-        block_border_color="*neutral_800",
-        block_border_color_dark="*neutral_800",
-        block_label_text_color="*neutral_300",
-        block_label_text_color_dark="*neutral_300",
-        input_background_fill="*neutral_800",
-        input_background_fill_dark="*neutral_800",
-        button_primary_background_fill="*primary_600",
-        button_primary_background_fill_dark="*primary_600",
+        # Force dark palette everywhere
+        body_background_fill="#0b0f1a",
+        body_background_fill_dark="#0b0f1a",
+        body_text_color="#e2e8f0",
+        body_text_color_dark="#e2e8f0",
+        body_text_color_subdued="#94a3b8",
+        body_text_color_subdued_dark="#94a3b8",
+        block_background_fill="#111827",
+        block_background_fill_dark="#111827",
+        block_border_color="rgba(99,102,241,0.15)",
+        block_border_color_dark="rgba(99,102,241,0.15)",
+        block_label_text_color="#c7d2fe",
+        block_label_text_color_dark="#c7d2fe",
+        block_title_text_color="#e0e7ff",
+        block_title_text_color_dark="#e0e7ff",
+        input_background_fill="#1e1b4b",
+        input_background_fill_dark="#1e1b4b",
+        input_border_color="rgba(99,102,241,0.3)",
+        input_border_color_dark="rgba(99,102,241,0.3)",
+        input_placeholder_color="#6b7280",
+        input_placeholder_color_dark="#6b7280",
+        button_primary_background_fill="#6366f1",
+        button_primary_background_fill_dark="#6366f1",
+        button_primary_text_color="#ffffff",
+        button_primary_text_color_dark="#ffffff",
+        border_color_accent="#6366f1",
+        border_color_accent_dark="#6366f1",
+        color_accent_soft="rgba(99,102,241,0.15)",
+        color_accent_soft_dark="rgba(99,102,241,0.15)",
+        shadow_drop="0 4px 14px rgba(0,0,0,0.25)",
+        shadow_drop_lg="0 8px 30px rgba(0,0,0,0.35)",
     )
 
     with gr.Blocks(
@@ -297,9 +313,9 @@ def create_app():
         # ── Header ────────────────────────────────────────────
         gr.HTML("""
             <div id="app-header">
-                <h1>&#127919; AI Job Matcher</h1>
+                <h1>🎯 AI Job Matcher</h1>
                 <p>Smart job matching powered by open-source LLMs from Hugging Face</p>
-                <p style="font-size: 0.85rem; margin-top: 8px !important; color: #808aaa !important;">
+                <p class="subtitle">
                     Upload your CV &bull; Select an AI model &bull; Find your perfect job match
                 </p>
             </div>
@@ -319,8 +335,8 @@ def create_app():
                 elem_id="hf-token-input",
             )
 
-        # ── Main Input Section ─────────────────────────────────
-        gr.HTML('<p class="section-header">📄 Upload & Configure</p>')
+        # ── Upload & Configure ─────────────────────────────────
+        gr.HTML('<span class="section-title">📄 Upload & Configure</span>')
 
         with gr.Row(equal_height=True):
             with gr.Column(scale=1):
@@ -336,7 +352,7 @@ def create_app():
                     choices=MODEL_CHOICES,
                     value=MODEL_CHOICES[0],
                     label="🤖 Select AI Model",
-                    info="Small, efficient open-source models (no OOM risk)",
+                    info="Small, efficient models (no OOM risk on free tier)",
                     elem_id="model-select",
                 )
                 occupation_input = gr.Textbox(
@@ -346,7 +362,7 @@ def create_app():
                 )
 
         # ── Search Filters ─────────────────────────────────────
-        gr.HTML('<p class="section-header">🔍 Search Filters</p>')
+        gr.HTML('<span class="section-title">🔍 Search Filters</span>')
 
         with gr.Row():
             city_input = gr.Textbox(
@@ -409,7 +425,7 @@ def create_app():
         )
 
         # ── Results Section ────────────────────────────────────
-        gr.HTML('<p class="section-header" style="margin-top: 1.5rem;">📈 Results</p>')
+        gr.HTML('<span class="section-title" style="margin-top: 1.5rem;">📈 Results</span>')
 
         with gr.Tabs():
             with gr.Tab("💼 Job Matches", id="tab-jobs"):
@@ -468,10 +484,10 @@ def create_app():
                 <p>
                     AI Job Matcher v{get_app_version()} &bull;
                     Powered by open-source LLMs on
-                    <a href="https://huggingface.co" target="_blank" style="color: #667eea;">Hugging Face</a> &bull;
-                    <a href="https://github.com" target="_blank" style="color: #667eea;">GitHub</a>
+                    <a href="https://huggingface.co" target="_blank">Hugging Face</a> &bull;
+                    <a href="https://github.com/sparshgupta21/ai-job-matcher" target="_blank">GitHub</a>
                 </p>
-                <p style="font-size: 0.75rem; color: #505868; margin-top: 4px;">
+                <p>
                     Your CV is processed in-memory only and never stored. &bull;
                     Protected by multi-layer guardrails against prompt injection.
                 </p>

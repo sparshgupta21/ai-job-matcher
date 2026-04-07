@@ -1,11 +1,24 @@
+---
+title: AI Job Matcher
+emoji: 🎯
+colorFrom: indigo
+colorTo: purple
+sdk: gradio
+sdk_version: "5.0"
+app_file: app.py
+pinned: false
+license: mit
+short_description: AI-powered job matching using open-source LLMs
+---
+
 # AI Job Matcher
 
 > **Smart job matching powered by open-source LLMs from Hugging Face**
 
 Upload your CV, select an AI model, and instantly find matching jobs with AI-powered analysis, auto-fill data, and tailored recommendations — all running on free, open-source language models.
 
-[![Open in Spaces](https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-lg-dark.svg)](https://huggingface.co/spaces/YOUR_USERNAME/ai-job-matcher)
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YOUR_USERNAME/ai-job-matcher/blob/main/colab_notebook.ipynb)
+[![Open in Spaces](https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-lg-dark.svg)](https://huggingface.co/spaces/sparshgupta21/ai-job-matcher)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sparshgupta21/ai-job-matcher/blob/main/colab_notebook.ipynb)
 
 ---
 
@@ -56,7 +69,7 @@ Upload your CV, select an AI model, and instantly find matching jobs with AI-pow
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/ai-job-matcher.git
+git clone https://github.com/sparshgupta21/ai-job-matcher.git
 cd ai-job-matcher
 
 # Create virtual environment
@@ -134,7 +147,7 @@ This application implements multiple layers of security:
 3. Upload all project files (or connect your GitHub repo)
 4. Add `HF_TOKEN` as a Space secret in Settings
 5. Optionally add `JSEARCH_API_KEY` for real job data
-6. Your app will be live at `https://huggingface.co/spaces/YOUR_USERNAME/ai-job-matcher`
+6. Your app will be live at `https://huggingface.co/spaces/sparshgupta21/ai-job-matcher`
 
 ---
 
