@@ -18,11 +18,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Git LFS
-        run: |
-          apt-get update
-          apt-get install -y git-lfs
-
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -32,19 +27,20 @@ jobs:
         run: |
           pip install -r requirements.txt
 
-      - name: Push to HuggingFace Spaces
+      - name: Deploy to HuggingFace Spaces
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           pip install huggingface_hub
           python -c "
-          from huggingface_hub import HfApi
-          api = HfApi()
-          api.upload_folder(
-            folder_path='.',
-            repo_id='sparsh21/AI_job_matcher',
-            repo_type='space',
-            token='${{ secrets.HF_TOKEN }}'
-          )
-          print('Deployed to HuggingFace Spaces!')
-          "
+import os
+from huggingface_hub import HfApi
+api = HfApi()
+api.upload_folder(
+    folder_path='.',
+    repo_id='sparsh21/AI_job_matcher',
+    repo_type='space',
+    token=os.environ['HF_TOKEN']
+)
+print('Deployed successfully!')
+"
