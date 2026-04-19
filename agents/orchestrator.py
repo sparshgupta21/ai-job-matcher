@@ -74,7 +74,18 @@ class AgentOrchestrator:
             )
             return _status_error(), msg, "", "", ""
 
-        # ── Step 2: Validate inputs ───────────────────────────
+        # ── Step 2: Validate HF Token is provided ─────────────
+        if not hf_token_input or not hf_token_input.strip():
+            return (
+                _status_error(),
+                "## 🔑 HuggingFace Token Required\n\n"
+                "Please enter your HuggingFace API token to use AI features.\n\n"
+                "**Get a free token:** https://huggingface.co/settings/tokens\n\n"
+                "Without a token, AI analysis (CV parsing, job matching, cover letters) will not work.",
+                "", "", ""
+            )
+
+        # ── Step 3: Validate CV file ──────────────────────────
         if not cv_file:
             return _status_error(), "## 📄 Please Upload Your CV\n\nUpload a PDF or DOCX file to get started.", "", "", ""
 
@@ -90,13 +101,13 @@ class AgentOrchestrator:
         if not is_valid:
             return _status_error(), f"## 🔒 Security Alert\n\n{error}", "", "", ""
 
-        # ── Step 3: Reinitialize agents with selected model ───
+        # ── Step 4: Reinitialize agents with selected model ───
         self.agent1 = CVIngestorAgent(model_display_name)
         self.agent2 = JobHunterAgent(model_display_name)
         self.agent3 = ApplicationHelperAgent(model_display_name)
         self.memory = AgentMemory()
 
-        # ── Step 4: Build preferences ─────────────────────────
+        # ── Step 5: Build preferences ─────────────────────────
         skills_list = [s.strip() for s in skills_input.split(",") if s.strip()] if skills_input else []
 
         self.memory.preferences = UserPreferences(
