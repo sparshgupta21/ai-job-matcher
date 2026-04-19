@@ -8,17 +8,32 @@ sdk_version: "5.0"
 app_file: app.py
 pinned: false
 license: mit
-short_description: AI-powered job matching using open-source LLMs
+short_description: Multi-Agent AI job matching with open-source LLMs
 ---
 
-# AI Job Matcher
+# AI Job Matcher v2.0
 
-> **Smart job matching powered by open-source LLMs from Hugging Face**
+> **Multi-Agent AI job matching powered by open-source LLMs from Hugging Face**
 
-Upload your CV, select an AI model, and instantly find matching jobs with AI-powered analysis, auto-fill data, and tailored recommendations — all running on free, open-source language models.
+Upload your CV, and 3 AI agents work together to analyze your profile, hunt for matching jobs across Indian portals (Naukri, LinkedIn, IIMJobs, Foundit), and prepare application packages with auto-fill data and tailored tips.
 
 [![Open in Spaces](https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-lg-dark.svg)](https://huggingface.co/spaces/sparshgupta21/ai-job-matcher)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sparshgupta21/ai-job-matcher/blob/main/colab_notebook.ipynb)
+
+---
+
+## 🏗️ Architecture: 3 AI Agents
+
+```
+📄 Agent 1: CV Ingestor        🔍 Agent 2: Job Hunter           📋 Agent 3: Application Helper
+  ├── Parse PDF/DOCX             ├── Build smart queries           ├── Direct apply links
+  ├── Extract skills/contact     ├── Search Naukri, LinkedIn       ├── Auto-fill form data
+  ├── LLM-enhanced analysis      │   IIMJobs, Foundit, Monster     ├── Cover letter snippets
+  └── → CVProfile (Pydantic)     ├── Score & rank matches          └── Application tips
+                                 └── → JobListings (Pydantic)
+```
+
+All agents communicate through **Pydantic v2 data contracts** — no raw text passed between agents, only validated schemas.
 
 ---
 
@@ -26,14 +41,16 @@ Upload your CV, select an AI model, and instantly find matching jobs with AI-pow
 
 | Feature | Description |
 |---------|-------------|
-| **CV Parsing** | Upload PDF or DOCX resumes with automatic skill and section extraction |
-| **LLM Selection** | Choose from 6+ small, efficient open-source models (1B-3.8B params) |
-| **Job Search** | Real-time job listings via JSearch/Adzuna APIs + demo mode |
-| **AI Matching** | LLM-powered job-to-CV matching with relevance scoring |
-| **Auto-Fill** | Extract application data (name, email, skills) ready to copy-paste |
-| **Cover Letters** | AI-generated tailored cover letters per job |
-| **Security** | Multi-layer guardrails against prompt injection and jailbreaking |
-| **Privacy** | CVs processed in-memory only — never stored on disk |
+| **3-Agent Architecture** | CV Ingestor → Job Hunter → Application Helper pipeline |
+| **Pydantic Contracts** | Typed data handshake between agents with validation |
+| **India-First Search** | Targets Naukri, LinkedIn India, IIMJobs, Foundit, Shine |
+| **Multi-Provider Search** | Tavily → DuckDuckGo (free!) → JSearch → Adzuna → Demo |
+| **LLM Selection** | 6 free open-source models (1B-3.8B params) |
+| **Auto-Fill** | Extract application data ready to copy-paste |
+| **Cover Letters** | AI-generated tailored snippets per job |
+| **Security** | Multi-layer guardrails, HMAC-signed agent context |
+| **Privacy** | CVs processed in-memory only — never stored |
+| **Portal Tips** | Naukri/LinkedIn/IIMJobs-specific application advice |
 
 ## Available AI Models
 
@@ -55,17 +72,10 @@ Upload your CV, select an AI model, and instantly find matching jobs with AI-pow
 ### Option 1: Hugging Face Spaces (Easiest)
 
 1. Click the **"Open in Spaces"** badge above
-2. Enter your HF token in the settings
-3. Upload your CV and start searching!
+2. Enter your HF token and Tavily key
+3. Upload your CV and launch the pipeline!
 
-### Option 2: Google Colab
-
-1. Click the **"Open In Colab"** badge above
-2. Run all cells
-3. Enter your HF token when prompted
-4. Use the generated public link
-
-### Option 3: Run Locally
+### Option 2: Run Locally
 
 ```bash
 # Clone the repository
@@ -80,12 +90,9 @@ source venv/bin/activate  # Linux/Mac
 # Install dependencies
 pip install -r requirements.txt
 
-# Set your HF token
-export HF_TOKEN=hf_xxxxxxxxxxxxxxxxxxxx  # Linux/Mac
-# set HF_TOKEN=hf_xxxxxxxxxxxxxxxxxxxx   # Windows
-
-# Optional: Set job search API key
-export JSEARCH_API_KEY=your_rapidapi_key
+# Set your API keys
+export HF_TOKEN=hf_xxxxxxxxxxxxxxxxxxxx
+export TAVILY_API_KEY=tvly-xxxxxxxxxx   # optional but recommended
 
 # Launch the app
 python app.py
@@ -99,12 +106,13 @@ Open http://localhost:7860 in your browser.
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `HF_TOKEN` | **Yes** | HuggingFace API token ([get one free](https://huggingface.co/settings/tokens)) |
-| `JSEARCH_API_KEY` | No | JSearch API key via [RapidAPI](https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch) (200 free req/month) |
-| `ADZUNA_APP_ID` | No | Adzuna App ID ([register free](https://developer.adzuna.com/)) |
+| `HF_TOKEN` | **Yes** | HuggingFace API token ([get free](https://huggingface.co/settings/tokens)) |
+| `TAVILY_API_KEY` | Recommended | Tavily search key ([get free](https://tavily.com), 1000/month) |
+| `JSEARCH_API_KEY` | No | JSearch via RapidAPI (200 free/month) |
+| `ADZUNA_APP_ID` | No | Adzuna App ID |
 | `ADZUNA_API_KEY` | No | Adzuna API Key |
 
-> Without job API keys, the app runs in **demo mode** with sample job listings.
+> **Free search without API keys:** The app includes DuckDuckGo search (unlimited, no key needed) and demo mode as fallbacks.
 
 ---
 
@@ -113,17 +121,25 @@ Open http://localhost:7860 in your browser.
 ```
 1. Upload CV (PDF/DOCX)
     ↓
-2. CV Parser extracts text, skills, contact info
+2. Agent 1 (CV Ingestor):
+   - Parse text, extract skills, contact info
+   - LLM-enhanced experience classification
+   - Output: CVProfile (Pydantic model)
     ↓
-3. Guardrails sanitize input (prompt injection protection)
+3. Agent 2 (Job Hunter):
+   - Build search queries from CVProfile
+   - Search: Tavily → DuckDuckGo → JSearch → Adzuna
+   - Target: Naukri, LinkedIn, IIMJobs, Foundit
+   - LLM-score each job vs your profile
+   - Output: Ranked JobListings (Pydantic models)
     ↓
-4. LLM analyzes CV and generates search queries
+4. Agent 3 (Application Helper):
+   - Generate auto-fill fields from CV
+   - Create cover letter snippets per job
+   - Provide portal-specific application tips
+   - Output: ApplicationPackages (Pydantic models)
     ↓
-5. Job Search API fetches matching listings
-    ↓
-6. LLM scores each job against your profile
-    ↓
-7. Results displayed with match scores + apply links
+5. Dashboard shows all results across 4 tabs
 ```
 
 ## Security & Guardrails
@@ -131,23 +147,14 @@ Open http://localhost:7860 in your browser.
 This application implements multiple layers of security:
 
 - **Input Sanitization**: Strips LLM control tokens and special characters
-- **Prompt Injection Detection**: Regex-based detection of 25+ injection patterns
-- **Context Isolation**: System prompts are completely separated from user data
-- **Output Filtering**: PII detection and removal from LLM responses
+- **Prompt Injection Detection**: 30+ regex patterns including multi-agent attacks
+- **Context Isolation**: System prompts completely separated from user data
+- **HMAC-Signed Agent Context**: Agents verify data integrity between pipeline stages
+- **Output Filtering**: PII detection (SSN, credit cards, Aadhaar, PAN) from LLM responses
 - **Rate Limiting**: Session-based request throttling (20 req/hour)
 - **File Validation**: Type, size, and content verification for uploads
-- **Topic Enforcement**: LLM constrained to job-search-related responses only
-
----
-
-## Deploy to Hugging Face Spaces
-
-1. Create a new Space at [huggingface.co/new-space](https://huggingface.co/new-space)
-2. Select **Gradio** as the SDK
-3. Upload all project files (or connect your GitHub repo)
-4. Add `HF_TOKEN` as a Space secret in Settings
-5. Optionally add `JSEARCH_API_KEY` for real job data
-6. Your app will be live at `https://huggingface.co/spaces/sparshgupta21/ai-job-matcher`
+- **Topic Enforcement**: Agents constrained to job-search-related responses only
+- **Pydantic Validation**: All inter-agent data validated by strict schemas
 
 ---
 
@@ -155,22 +162,42 @@ This application implements multiple layers of security:
 
 ```
 ai-job-matcher/
-├── app.py                # Main Gradio application
-├── config.py             # Model configs & filter options
-├── cv_parser.py          # PDF/DOCX resume parser
-├── llm_engine.py         # HF Inference API integration
-├── job_search.py         # Job search API integration
-├── matcher.py            # Job matching & ranking engine
-├── guardrails.py         # Security & safety layer
-├── prompts.py            # Isolated system prompts
-├── sample_data.py        # Demo mode fallback data
-├── utils.py              # Shared utilities
-├── requirements.txt      # Python dependencies
-├── .env.example          # Example environment variables
-├── colab_notebook.ipynb  # Google Colab launcher
-├── README.md             # This file
-└── LICENSE               # MIT License
+├── app.py                      # Main Gradio dashboard
+├── config.py                   # Models, filters, API settings
+├── models.py                   # Pydantic v2 data contracts
+├── agents/
+│   ├── __init__.py
+│   ├── base.py                 # Base agent class
+│   ├── cv_ingestor.py          # Agent 1: CV parsing & analysis
+│   ├── job_hunter.py           # Agent 2: Multi-portal job search
+│   ├── application_helper.py   # Agent 3: Apply links & auto-fill
+│   └── orchestrator.py         # Pipeline coordinator
+├── cv_parser.py                # PDF/DOCX text extraction
+├── llm_engine.py               # HF Inference API with retry
+├── job_search.py               # Tavily + DuckDuckGo + JSearch + Adzuna
+├── guardrails.py               # Multi-layer security
+├── prompts.py                  # Agent system prompts
+├── sample_data.py              # Demo mode fallback data
+├── utils.py                    # Shared utilities
+├── matcher.py                  # Legacy pipeline (backward compat)
+├── requirements.txt            # Python dependencies
+├── .env.example                # Example environment variables
+├── colab_notebook.ipynb        # Google Colab launcher
+├── README.md                   # This file
+└── LICENSE                     # MIT License
 ```
+
+---
+
+## Search Provider Priority
+
+| Priority | Provider | Free Tier | Requires Key? |
+|----------|----------|-----------|---------------|
+| 1 | **Tavily** | 1,000/month | Yes |
+| 2 | **DuckDuckGo** | Unlimited | **No** ✨ |
+| 3 | **JSearch** | 200/month | Yes |
+| 4 | **Adzuna** | Limited | Yes |
+| 5 | **Demo Mode** | Unlimited | No |
 
 ---
 
@@ -195,6 +222,8 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 ## Acknowledgments
 
 - [Hugging Face](https://huggingface.co/) for open-source models and free Spaces hosting
-- [JSearch API](https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch) for job listing data
-- [Gradio](https://gradio.app/) for the beautiful UI framework
-- All the open-source LLM creators (Meta, Google, Alibaba, Microsoft, Mistral, HuggingFace)
+- [Tavily](https://tavily.com/) for AI-optimized search API
+- [DuckDuckGo](https://duckduckgo.com/) for free, unlimited search
+- [Gradio](https://gradio.app/) for the UI framework
+- [Pydantic](https://docs.pydantic.dev/) for data validation
+- All the open-source LLM creators (Meta, Google, Alibaba, Microsoft, HuggingFace)

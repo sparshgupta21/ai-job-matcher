@@ -1,6 +1,6 @@
 """
-AI Job Matcher — Configuration
-Central configuration for LLM models, job search filters, and app settings.
+AI Job Matcher v2.0 — Configuration
+Central configuration for LLM models, search APIs, agent settings, and app controls.
 """
 
 # ─────────────────────────────────────────────
@@ -99,13 +99,19 @@ EDUCATION_LEVELS = [
 
 SALARY_RANGES = [
     "Any",
+    "₹0 - ₹5 LPA",
+    "₹5 - ₹10 LPA",
+    "₹10 - ₹15 LPA",
+    "₹15 - ₹25 LPA",
+    "₹25 - ₹40 LPA",
+    "₹40 - ₹60 LPA",
+    "₹60 LPA+",
     "$0 - $30,000",
     "$30,000 - $50,000",
     "$50,000 - $75,000",
     "$75,000 - $100,000",
     "$100,000 - $150,000",
-    "$150,000 - $200,000",
-    "$200,000+",
+    "$150,000+",
 ]
 
 DATE_POSTED_OPTIONS = [
@@ -126,11 +132,62 @@ MAX_JOBS_TO_DISPLAY = 10
 MAX_CV_TEXT_LENGTH = 15000  # characters
 SESSION_RATE_LIMIT = 20  # max requests per session
 
+APP_VERSION = "2.0.0"
+
 # ─────────────────────────────────────────────
-# API Settings
+# Search API Settings
 # ─────────────────────────────────────────────
 
+# Tavily (primary for AI agent search)
+TAVILY_API_URL = "https://api.tavily.com/search"
+
+# JSearch (RapidAPI)
 JSEARCH_API_URL = "https://jsearch.p.rapidapi.com/search"
 JSEARCH_API_HOST = "jsearch.p.rapidapi.com"
 
+# Adzuna
 ADZUNA_API_URL = "https://api.adzuna.com/v1/api/jobs"
+
+# Job portals to target via web search (India-first, then global)
+JOB_PORTAL_SITES_INDIA = [
+    "naukri.com",
+    "linkedin.com/jobs",
+    "iimjobs.com",
+    "foundit.in",        # formerly monster.in
+    "shine.com",
+    "instahyre.com",
+    "glassdoor.co.in",
+]
+
+JOB_PORTAL_SITES_GLOBAL = [
+    "linkedin.com/jobs",
+    "indeed.com",
+    "glassdoor.com",
+    "monster.com",
+    "ziprecruiter.com",
+]
+
+# ─────────────────────────────────────────────
+# Agent-Specific Settings
+# ─────────────────────────────────────────────
+
+AGENT_TOKEN_BUDGETS = {
+    "cv_ingestor": 2048,
+    "job_hunter": 3000,
+    "application_helper": 2000,
+}
+
+# Search result limits per source
+MAX_TAVILY_RESULTS = 8
+MAX_DUCKDUCKGO_RESULTS = 10
+MAX_JSEARCH_RESULTS = 10
+MAX_ADZUNA_RESULTS = 10
+
+# Search provider priority (tried in order)
+SEARCH_PROVIDER_PRIORITY = [
+    "tavily",
+    "duckduckgo",
+    "jsearch",
+    "adzuna",
+    "demo",
+]

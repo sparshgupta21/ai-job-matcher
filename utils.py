@@ -1,5 +1,5 @@
 """
-AI Job Matcher - Shared Utilities
+AI Job Matcher v2.0 — Shared Utilities
 """
 
 import os
@@ -23,7 +23,8 @@ def generate_session_id():
 
 def get_app_version():
     """Return current app version."""
-    return "1.0.0"
+    from config import APP_VERSION
+    return APP_VERSION
 
 
 def truncate_text(text, max_length=500, suffix="..."):

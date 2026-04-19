@@ -1,13 +1,33 @@
 """
-AI Job Matcher - Guardrails and Security
+AI Job Matcher v2.0 — Guardrails and Security
 Multi-layered defense against prompt injection, jailbreaking, and abuse.
+Includes HMAC-signed agent context for inter-agent data integrity.
 """
 
 import re
 import time
 import os
+import hashlib
+import hmac
+import secrets
 from collections import defaultdict
 
+
+# ─────────────────────────────────────────────
+# Internal signing key (regenerated per process)
+# ─────────────────────────────────────────────
+
+_SIGNING_KEY = secrets.token_bytes(32)
+
+
+def _get_signing_key() -> bytes:
+    """Return the process-local HMAC signing key."""
+    return _SIGNING_KEY
+
+
+# ─────────────────────────────────────────────
+# Prompt Injection Detection
+# ─────────────────────────────────────────────
 
 # Build LLM control token patterns dynamically to avoid parsing issues
 _LT = chr(60)  # <
@@ -40,6 +60,11 @@ INJECTION_PATTERNS = [
     r"import\s+os",
     r"__import__",
     r"subprocess",
+    # Multi-agent injection patterns
+    r"(change|modify|update)\s+(your|the)\s+(role|persona|identity)",
+    r"(you\s+are|become)\s+(agent|bot|assistant)\s+\d",
+    r"(transfer|send|forward)\s+(this|data|context)\s+to\s+(agent|another)",
+    r"(bypass|skip|ignore)\s+(guardrails?|security|validation|filters?)",
 ]
 
 COMPILED_INJECTION_PATTERNS = [
@@ -60,8 +85,14 @@ PII_PATTERNS = {
     "ssn": re.compile(r"\b\d{3}-\d{2}-\d{4}\b"),
     "credit_card": re.compile(r"\b(?:\d{4}[-\s]?){3}\d{4}\b"),
     "passport": re.compile(r"\b[A-Z]{1,2}\d{6,9}\b"),
+    "aadhaar": re.compile(r"\b\d{4}\s?\d{4}\s?\d{4}\b"),  # Indian Aadhaar
+    "pan": re.compile(r"\b[A-Z]{5}\d{4}[A-Z]\b"),  # Indian PAN
 }
 
+
+# ─────────────────────────────────────────────
+# Rate Limiting
+# ─────────────────────────────────────────────
 
 class RateLimiter:
     """Simple in-memory rate limiter per session."""
@@ -91,6 +122,10 @@ class RateLimiter:
 
 rate_limiter = RateLimiter()
 
+
+# ─────────────────────────────────────────────
+# Text Sanitization
+# ─────────────────────────────────────────────
 
 def sanitize_text(text):
     """Remove potentially dangerous characters and tokens from user text."""
@@ -122,6 +157,10 @@ def sanitize_text(text):
     return text.strip()
 
 
+# ─────────────────────────────────────────────
+# Prompt Injection Checks
+# ─────────────────────────────────────────────
+
 def check_prompt_injection(text):
     """Check text for prompt injection attempts. Returns (is_safe, reason)."""
     if not text:
@@ -151,6 +190,10 @@ def check_off_topic(text):
     return True, ""
 
 
+# ─────────────────────────────────────────────
+# PII Filtering
+# ─────────────────────────────────────────────
+
 def filter_output_pii(text):
     """Remove sensitive PII from LLM output (not from CV extraction)."""
     if not text:
@@ -161,6 +204,10 @@ def filter_output_pii(text):
 
     return text
 
+
+# ─────────────────────────────────────────────
+# File & Input Validation
+# ─────────────────────────────────────────────
 
 def validate_file_upload(file_path, max_size_mb=5):
     """Validate uploaded file type and size. Returns (is_valid, error_message)."""
@@ -194,6 +241,10 @@ def validate_user_inputs(city, occupation, skills):
     return True, ""
 
 
+# ─────────────────────────────────────────────
+# Safe Content Wrapping (System/User boundary)
+# ─────────────────────────────────────────────
+
 def wrap_user_content_safely(cv_text, user_query=""):
     """Wrap user-provided content with safety delimiters for LLM processing."""
     safe_cv = sanitize_text(cv_text)
@@ -213,3 +264,44 @@ def wrap_user_content_safely(cv_text, user_query=""):
         )
 
     return wrapped
+
+
+# ─────────────────────────────────────────────
+# HMAC-Signed Agent Context
+# ─────────────────────────────────────────────
+
+def sign_agent_output(agent_name: str, data: str) -> str:
+    """
+    Sign an agent's output so downstream agents can verify data integrity.
+    Returns hex HMAC signature.
+    """
+    payload = f"{agent_name}:{data}".encode("utf-8")
+    return hmac.new(_get_signing_key(), payload, hashlib.sha256).hexdigest()
+
+
+def verify_agent_output(agent_name: str, data: str, signature: str) -> bool:
+    """Verify that agent output hasn't been tampered with."""
+    expected = sign_agent_output(agent_name, data)
+    return hmac.compare_digest(expected, signature)
+
+
+# ─────────────────────────────────────────────
+# Agent Input Validator
+# ─────────────────────────────────────────────
+
+def validate_agent_input(agent_name: str, input_text: str) -> tuple[bool, str]:
+    """
+    Combined validation for agent inputs: injection check + off-topic check.
+    Returns (is_valid, error_message).
+    """
+    # Injection check
+    is_safe, reason = check_prompt_injection(input_text)
+    if not is_safe:
+        return False, f"[{agent_name}] {reason}"
+
+    # Off-topic check
+    is_on_topic, reason = check_off_topic(input_text)
+    if not is_on_topic:
+        return False, f"[{agent_name}] {reason}"
+
+    return True, ""

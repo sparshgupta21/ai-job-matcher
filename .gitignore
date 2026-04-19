@@ -1,13 +1,35 @@
+# Python
 __pycache__/
-*.pyc
-*.pyo
-.env
-venv/
-.venv/
+*.py[cod]
 *.egg-info/
 dist/
 build/
-.ipynb_checkpoints/
-*.log
+
+# Environment
+.env
+.env.local
+*.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
 .DS_Store
 Thumbs.db
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Gradio
+flagged/
+*.tmp
+
+# Uploaded files (privacy)
+uploads/
+*.pdf
+*.docx

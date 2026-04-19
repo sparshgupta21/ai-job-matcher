@@ -1,30 +1,200 @@
 """
-AI Job Matcher - Job Search API Integration
-Supports JSearch (RapidAPI) and Adzuna APIs with demo mode fallback.
+AI Job Matcher v2.0 — Job Search Integration
+Multi-provider search: Tavily → DuckDuckGo → JSearch → Adzuna → Demo fallback.
+India-first portal targeting with global fallback.
 """
 
 import os
 import logging
 import requests
 
-from config import JSEARCH_API_URL, JSEARCH_API_HOST, ADZUNA_API_URL
+from config import (
+    JSEARCH_API_URL, JSEARCH_API_HOST, ADZUNA_API_URL,
+    JOB_PORTAL_SITES_INDIA, JOB_PORTAL_SITES_GLOBAL,
+    MAX_TAVILY_RESULTS, MAX_DUCKDUCKGO_RESULTS,
+    MAX_JSEARCH_RESULTS, MAX_ADZUNA_RESULTS,
+    SEARCH_PROVIDER_PRIORITY,
+)
 
 logger = logging.getLogger(__name__)
 
+
+# ═══════════════════════════════════════════════
+# 1. TAVILY SEARCH (Primary — 1,000 free/month)
+# ═══════════════════════════════════════════════
+
+def get_tavily_api_key():
+    """Get Tavily API key from environment."""
+    return os.environ.get("TAVILY_API_KEY", "")
+
+
+def search_jobs_tavily(query, location="", job_type="", experience="",
+                       num_results=8, include_india=True):
+    """
+    Search jobs using Tavily Search API.
+    Targets specific job portal sites for structured results.
+    """
+    api_key = get_tavily_api_key()
+    if not api_key:
+        return None, "No Tavily API key configured."
+
+    try:
+        from tavily import TavilyClient
+
+        client = TavilyClient(api_key=api_key)
+
+        # Build search query with location
+        search_query = f"{query} jobs"
+        if location:
+            search_query += f" in {location}"
+        if job_type and job_type != "Any":
+            search_query += f" {job_type}"
+        if experience and experience != "Any":
+            search_query += f" {experience}"
+
+        # Target India-first portals
+        portal_sites = JOB_PORTAL_SITES_INDIA if include_india else JOB_PORTAL_SITES_GLOBAL
+
+        # Include domain hints in the query for better results
+        site_hint = " OR ".join([f"site:{s}" for s in portal_sites[:4]])
+        search_query_with_sites = f"{search_query} ({site_hint})"
+
+        response = client.search(
+            query=search_query_with_sites,
+            search_depth="basic",
+            max_results=min(num_results, MAX_TAVILY_RESULTS),
+            include_answer=False,
+        )
+
+        jobs = []
+        for result in response.get("results", []):
+            url = result.get("url", "")
+            title_raw = result.get("title", "")
+            content = result.get("content", "")
+
+            # Parse job details from search result
+            job = _parse_tavily_result(title_raw, content, url)
+            if job:
+                jobs.append(job)
+
+        if jobs:
+            logger.info(f"Tavily returned {len(jobs)} job results")
+            return jobs, None
+
+        return None, "Tavily returned no matching jobs."
+
+    except Exception as e:
+        logger.warning(f"Tavily search failed: {e}")
+        return None, f"Tavily search failed: {str(e)}"
+
+
+def _parse_tavily_result(title, content, url):
+    """Parse a Tavily search result into a job listing dict."""
+    if not title or not url:
+        return None
+
+    # Determine source portal
+    source = "tavily"
+    for portal in JOB_PORTAL_SITES_INDIA + JOB_PORTAL_SITES_GLOBAL:
+        if portal in url:
+            source = portal.split(".")[0]  # e.g., "naukri", "linkedin"
+            break
+
+    # Clean title — often includes "- Company Name" or "| Location"
+    title_clean = title
+    company = "N/A"
+    for sep in [" - ", " | ", " at ", " — "]:
+        if sep in title:
+            parts = title.split(sep, 1)
+            title_clean = parts[0].strip()
+            company = parts[1].strip() if len(parts) > 1 else "N/A"
+            break
+
+    # Extract location from content if present
+    location = "India"
+    location_keywords = ["location:", "place:", "city:", "based in", "office:"]
+    for keyword in location_keywords:
+        if keyword.lower() in content.lower():
+            idx = content.lower().index(keyword.lower()) + len(keyword)
+            loc_text = content[idx:idx + 50].strip()
+            location = loc_text.split("\n")[0].split(",")[0].strip()[:40]
+            break
+
+    return {
+        "title": title_clean[:100],
+        "company": company[:60],
+        "location": location,
+        "description": content[:500] if content else "",
+        "salary": "Not specified",
+        "job_type": "N/A",
+        "date_posted": "",
+        "apply_url": url,
+        "skills_required": [],
+        "source": source,
+    }
+
+
+# ═══════════════════════════════════════════════
+# 2. DUCKDUCKGO SEARCH (Free, Unlimited fallback)
+# ═══════════════════════════════════════════════
+
+def search_jobs_duckduckgo(query, location="", num_results=10):
+    """
+    Search jobs using DuckDuckGo (completely free, no API key).
+    Uses duckduckgo-search Python library.
+    """
+    try:
+        from duckduckgo_search import DDGS
+
+        search_query = f"{query} jobs"
+        if location:
+            search_query += f" in {location}"
+
+        # Add India-specific job portals
+        search_query += " (naukri OR linkedin OR iimjobs OR foundit)"
+
+        jobs = []
+        with DDGS() as ddgs:
+            results = list(ddgs.text(
+                search_query,
+                region="in-en",  # India English
+                max_results=min(num_results, MAX_DUCKDUCKGO_RESULTS),
+            ))
+
+        for result in results:
+            title = result.get("title", "")
+            body = result.get("body", "")
+            url = result.get("href", "")
+
+            job = _parse_tavily_result(title, body, url)  # same parser works
+            if job:
+                job["source"] = "duckduckgo"
+                jobs.append(job)
+
+        if jobs:
+            logger.info(f"DuckDuckGo returned {len(jobs)} job results")
+            return jobs, None
+
+        return None, "DuckDuckGo returned no matching jobs."
+
+    except ImportError:
+        return None, "duckduckgo-search library not installed."
+    except Exception as e:
+        logger.warning(f"DuckDuckGo search failed: {e}")
+        return None, f"DuckDuckGo search failed: {str(e)}"
+
+
+# ═══════════════════════════════════════════════
+# 3. JSEARCH API (RapidAPI — 200 free/month)
+# ═══════════════════════════════════════════════
 
 def get_jsearch_api_key():
     """Get JSearch/RapidAPI key from environment."""
     return os.environ.get("JSEARCH_API_KEY", os.environ.get("RAPIDAPI_KEY", ""))
 
 
-def get_adzuna_credentials():
-    """Get Adzuna API credentials from environment."""
-    app_id = os.environ.get("ADZUNA_APP_ID", "")
-    app_key = os.environ.get("ADZUNA_API_KEY", "")
-    return app_id, app_key
-
-
-def search_jobs_jsearch(query, location="", job_type="", experience="", num_results=10, date_posted=""):
+def search_jobs_jsearch(query, location="", job_type="", experience="",
+                        num_results=10, date_posted=""):
     """
     Search jobs using JSearch API (via RapidAPI).
     Free tier: ~200 requests/month.
@@ -42,7 +212,7 @@ def search_jobs_jsearch(query, location="", job_type="", experience="", num_resu
         "query": search_query,
         "page": "1",
         "num_pages": "1",
-        "results_per_page": str(min(num_results, 10)),
+        "results_per_page": str(min(num_results, MAX_JSEARCH_RESULTS)),
     }
 
     # Map date_posted filter
@@ -98,7 +268,7 @@ def search_jobs_jsearch(query, location="", job_type="", experience="", num_resu
                 "date_posted": item.get("job_posted_at_datetime_utc", "N/A")[:10],
                 "apply_url": item.get("job_apply_link", "#"),
                 "skills_required": item.get("job_required_skills") or [],
-                "source": "JSearch",
+                "source": "jsearch",
             }
             jobs.append(job)
 
@@ -108,18 +278,29 @@ def search_jobs_jsearch(query, location="", job_type="", experience="", num_resu
         return None, "Job search request timed out. Please try again."
     except requests.exceptions.HTTPError as e:
         if e.response.status_code == 429:
-            return None, "JSearch API rate limit reached. Using demo data instead."
+            return None, "JSearch API rate limit reached."
         elif e.response.status_code == 403:
-            return None, "JSearch API key is invalid. Please check your JSEARCH_API_KEY."
+            return None, "JSearch API key is invalid."
         return None, f"Job search API error: {e}"
     except Exception as e:
         return None, f"Job search failed: {str(e)}"
 
 
-def search_jobs_adzuna(query, location="", country="us", num_results=10):
+# ═══════════════════════════════════════════════
+# 4. ADZUNA API
+# ═══════════════════════════════════════════════
+
+def get_adzuna_credentials():
+    """Get Adzuna API credentials from environment."""
+    app_id = os.environ.get("ADZUNA_APP_ID", "")
+    app_key = os.environ.get("ADZUNA_API_KEY", "")
+    return app_id, app_key
+
+
+def search_jobs_adzuna(query, location="", country="in", num_results=10):
     """
     Search jobs using Adzuna API.
-    Free tier: limited daily requests.
+    Default to India (country='in').
     """
     app_id, app_key = get_adzuna_credentials()
     if not app_id or not app_key:
@@ -130,7 +311,7 @@ def search_jobs_adzuna(query, location="", country="us", num_results=10):
     params = {
         "app_id": app_id,
         "app_key": app_key,
-        "results_per_page": min(num_results, 10),
+        "results_per_page": min(num_results, MAX_ADZUNA_RESULTS),
         "what": query,
         "content-type": "application/json",
     }
@@ -155,7 +336,7 @@ def search_jobs_adzuna(query, location="", country="us", num_results=10):
                 "date_posted": item.get("created", "N/A")[:10],
                 "apply_url": item.get("redirect_url", "#"),
                 "skills_required": [],
-                "source": "Adzuna",
+                "source": "adzuna",
             }
             jobs.append(job)
 
@@ -165,45 +346,112 @@ def search_jobs_adzuna(query, location="", country="us", num_results=10):
         return None, f"Adzuna search failed: {str(e)}"
 
 
+# ═══════════════════════════════════════════════
+# 5. MAIN SEARCH ORCHESTRATOR
+# ═══════════════════════════════════════════════
+
 def search_jobs(query, location="", job_type="Any", experience="Any",
                 num_results=10, date_posted="Any time"):
     """
-    Main job search function. Tries available APIs, falls back to demo data.
+    Main job search function.
+    Tries providers in priority order, falls back to demo data.
+    Returns: (jobs_list, source_name, warning_or_None)
     """
-    # Try JSearch first
-    jobs, error = search_jobs_jsearch(
-        query=query,
-        location=location,
-        job_type=job_type if job_type != "Any" else "",
-        experience=experience if experience != "Any" else "",
-        num_results=num_results,
-        date_posted=date_posted if date_posted != "Any time" else "",
-    )
+    all_jobs = []
+    sources_tried = []
+    warnings = []
 
-    if jobs:
-        return jobs, "jsearch", None
+    for provider in SEARCH_PROVIDER_PRIORITY:
+        if len(all_jobs) >= num_results:
+            break
 
-    # Try Adzuna
-    jobs, error2 = search_jobs_adzuna(query=query, location=location, num_results=num_results)
-    if jobs:
-        return jobs, "adzuna", None
+        if provider == "tavily":
+            jobs, error = search_jobs_tavily(
+                query=query, location=location,
+                job_type=job_type if job_type != "Any" else "",
+                experience=experience if experience != "Any" else "",
+                num_results=num_results,
+            )
+            if jobs:
+                all_jobs.extend(jobs)
+                sources_tried.append("tavily")
+            elif error:
+                warnings.append(error)
 
-    # Fall back to demo data
-    from sample_data import get_sample_jobs
-    demo_jobs = get_sample_jobs(
-        query=query,
-        location=location,
-        job_type=job_type,
-        num_results=num_results,
-    )
+        elif provider == "duckduckgo":
+            jobs, error = search_jobs_duckduckgo(
+                query=query, location=location,
+                num_results=num_results - len(all_jobs),
+            )
+            if jobs:
+                all_jobs.extend(jobs)
+                sources_tried.append("duckduckgo")
+            elif error:
+                warnings.append(error)
 
-    fallback_msg = (
-        "Using demo data (no job API key configured). "
-        "Set JSEARCH_API_KEY or ADZUNA_APP_ID + ADZUNA_API_KEY for real job listings."
-    )
+        elif provider == "jsearch":
+            jobs, error = search_jobs_jsearch(
+                query=query, location=location,
+                job_type=job_type if job_type != "Any" else "",
+                experience=experience if experience != "Any" else "",
+                num_results=num_results - len(all_jobs),
+                date_posted=date_posted if date_posted != "Any time" else "",
+            )
+            if jobs:
+                all_jobs.extend(jobs)
+                sources_tried.append("jsearch")
+            elif error:
+                warnings.append(error)
 
-    return demo_jobs, "demo", fallback_msg
+        elif provider == "adzuna":
+            jobs, error = search_jobs_adzuna(
+                query=query, location=location,
+                num_results=num_results - len(all_jobs),
+            )
+            if jobs:
+                all_jobs.extend(jobs)
+                sources_tried.append("adzuna")
+            elif error:
+                warnings.append(error)
 
+        elif provider == "demo":
+            if not all_jobs:
+                from sample_data import get_sample_jobs
+                demo_jobs = get_sample_jobs(
+                    query=query, location=location,
+                    job_type=job_type, num_results=num_results,
+                )
+                all_jobs.extend(demo_jobs)
+                sources_tried.append("demo")
+
+    # Deduplicate by URL
+    seen_urls = set()
+    unique_jobs = []
+    for job in all_jobs:
+        url = job.get("apply_url", "")
+        if url not in seen_urls:
+            seen_urls.add(url)
+            unique_jobs.append(job)
+
+    unique_jobs = unique_jobs[:num_results]
+
+    source_str = "+".join(sources_tried) if sources_tried else "demo"
+    warning_str = None
+
+    if "demo" in sources_tried and len(sources_tried) == 1:
+        warning_str = (
+            "Using demo data (no search API keys configured). "
+            "Set TAVILY_API_KEY for real job listings from Indian portals."
+        )
+    elif warnings and not unique_jobs:
+        warning_str = " | ".join(warnings[:2])
+
+    return unique_jobs, source_str, warning_str
+
+
+# ═══════════════════════════════════════════════
+# Helpers
+# ═══════════════════════════════════════════════
 
 def _format_location(item):
     """Format location from JSearch API response."""
