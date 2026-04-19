@@ -37,6 +37,7 @@ class BaseAgent(ABC):
         self.model_display_name = model_display_name
         self._start_time: float = 0.0
         self._end_time: float = 0.0
+        self._hf_token: str = ""  # set per-request from memory
 
     @abstractmethod
     def run(self, memory: AgentMemory) -> AgentMemory:
@@ -51,6 +52,7 @@ class BaseAgent(ABC):
                    max_tokens: int = 2048) -> str:
         """
         Call the LLM with guardrails validation on input and output.
+        Uses per-session HF token (not os.environ) for user isolation.
         """
         # Validate input
         is_valid, error = validate_agent_input(self.agent_name, user_content)
@@ -58,12 +60,13 @@ class BaseAgent(ABC):
             logger.warning(f"[{self.agent_name}] Input validation failed: {error}")
             return f"Input validation failed: {error}"
 
-        # Call LLM
+        # Call LLM with per-user token
         raw_output = call_llm(
             model_id=self.model_id,
             system_prompt=system_prompt,
             user_content=user_content,
             max_tokens=max_tokens,
+            hf_token=self._hf_token,
         )
 
         # Filter PII from output
@@ -94,6 +97,9 @@ class BaseAgent(ABC):
         Execute the agent with error handling, timing, and logging.
         Wraps the `run()` method.
         """
+        # Pull per-user token from shared memory
+        self._hf_token = memory.hf_token
+
         self.start_timer()
         logger.info(f"[{self.agent_name}] Starting execution...")
 

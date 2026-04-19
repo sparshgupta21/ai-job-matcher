@@ -29,19 +29,20 @@ def get_tavily_api_key():
 
 
 def search_jobs_tavily(query, location="", job_type="", experience="",
-                       num_results=8, include_india=True):
+                       num_results=8, include_india=True, api_key=""):
     """
     Search jobs using Tavily Search API.
     Targets specific job portal sites for structured results.
     """
-    api_key = get_tavily_api_key()
-    if not api_key:
+    # Per-user key takes priority; fall back to env var only for CLI/local use
+    effective_key = api_key or get_tavily_api_key()
+    if not effective_key:
         return None, "No Tavily API key configured."
 
     try:
         from tavily import TavilyClient
 
-        client = TavilyClient(api_key=api_key)
+        client = TavilyClient(api_key=effective_key)
 
         # Build search query with location
         search_query = f"{query} jobs"
@@ -351,7 +352,7 @@ def search_jobs_adzuna(query, location="", country="in", num_results=10):
 # ═══════════════════════════════════════════════
 
 def search_jobs(query, location="", job_type="Any", experience="Any",
-                num_results=10, date_posted="Any time"):
+                num_results=10, date_posted="Any time", tavily_api_key=""):
     """
     Main job search function.
     Tries providers in priority order, falls back to demo data.
@@ -371,6 +372,7 @@ def search_jobs(query, location="", job_type="Any", experience="Any",
                 job_type=job_type if job_type != "Any" else "",
                 experience=experience if experience != "Any" else "",
                 num_results=num_results,
+                api_key=tavily_api_key,
             )
             if jobs:
                 all_jobs.extend(jobs)

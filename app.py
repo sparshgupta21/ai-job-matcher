@@ -404,11 +404,13 @@ def create_app():
             </div>
         """)
 
-        # ── API Keys (collapsible) ────────────────────────────
-        with gr.Accordion("🔑 API Keys (Required for AI features)", open=False):
+        # ── API Keys (open by default — users must enter their own) ──
+        with gr.Accordion("🔑 API Keys — Enter YOUR Keys to Use AI Features", open=True):
             gr.Markdown(
-                "Enter your API keys to enable AI analysis and real job search. "
-                "All keys are used in-memory only and never stored."
+                "⚠️ **You must enter your own API keys.** Each user's tokens are used "
+                "privately for their session only — never stored, never shared. "
+                "Get a [free HF token](https://huggingface.co/settings/tokens) and "
+                "optionally a [free Tavily key](https://tavily.com) for real job search."
             )
             with gr.Row():
                 hf_token_input = gr.Textbox(

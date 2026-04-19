@@ -26,6 +26,9 @@ class AgentOrchestrator:
     """
     Central orchestrator that runs the 3-agent pipeline sequentially.
     Manages shared AgentMemory and returns formatted results.
+
+    IMPORTANT: User API tokens are stored in AgentMemory (per-request),
+    NEVER in os.environ (which is shared across all concurrent users).
     """
 
     def __init__(self, model_display_name: str = "SmolLM2 1.7B (Fast & Light)"):
@@ -58,11 +61,22 @@ class AgentOrchestrator:
         """
         pipeline_start = time.time()
 
-        # ── Step 0: Set API tokens if provided via UI ──────────
-        if hf_token_input and hf_token_input.strip():
-            os.environ["HF_TOKEN"] = hf_token_input.strip()
-        if tavily_key_input and tavily_key_input.strip():
-            os.environ["TAVILY_API_KEY"] = tavily_key_input.strip()
+        # ── Step 0: Validate HF Token ──────────────────────────
+        # Tokens are stored in AgentMemory (per-request), NOT os.environ.
+        hf_token = (hf_token_input or "").strip()
+        tavily_key = (tavily_key_input or "").strip()
+
+        if not hf_token:
+            return (
+                _status_error(),
+                "## 🔑 HuggingFace Token Required\n\n"
+                "Please enter your HuggingFace API token to use AI features.\n\n"
+                "**Get a free token:** [huggingface.co/settings/tokens]"
+                "(https://huggingface.co/settings/tokens)\n\n"
+                "Without a token, AI analysis (CV parsing, job matching, "
+                "cover letters) will not work.",
+                "", "", ""
+            )
 
         # ── Step 1: Rate limiting ──────────────────────────────
         if not rate_limiter.is_allowed():
@@ -95,6 +109,10 @@ class AgentOrchestrator:
         self.agent2 = JobHunterAgent(model_display_name)
         self.agent3 = ApplicationHelperAgent(model_display_name)
         self.memory = AgentMemory()
+
+        # Store per-user tokens in memory (NOT os.environ)
+        self.memory.hf_token = hf_token
+        self.memory.tavily_api_key = tavily_key
 
         # ── Step 4: Build preferences ─────────────────────────
         skills_list = [s.strip() for s in skills_input.split(",") if s.strip()] if skills_input else []

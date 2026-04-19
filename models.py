@@ -206,6 +206,11 @@ class AgentMemory(BaseModel):
     pipeline_status: PipelineStatus = PipelineStatus.IDLE
     errors: list[str] = Field(default_factory=list)
 
+    # Per-session API tokens (NEVER stored in os.environ)
+    # These are unique per user request, isolating concurrent users.
+    hf_token: str = ""
+    tavily_api_key: str = ""
+
     # Agent timing (for dashboard display)
     agent1_time: float = 0.0
     agent2_time: float = 0.0

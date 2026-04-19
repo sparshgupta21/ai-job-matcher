@@ -57,6 +57,7 @@ class JobHunterAgent(BaseAgent):
             experience=experience,
             num_results=10,
             date_posted=date_posted,
+            tavily_api_key=memory.tavily_api_key,
         )
 
         if not raw_jobs:

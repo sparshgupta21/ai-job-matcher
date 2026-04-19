@@ -16,7 +16,8 @@ def get_hf_token():
     return os.environ.get("HF_TOKEN", os.environ.get("HUGGINGFACE_TOKEN", ""))
 
 
-def call_llm(model_id, system_prompt, user_content, max_tokens=2048, temperature=0.3, retries=2):
+def call_llm(model_id, system_prompt, user_content, max_tokens=2048,
+             temperature=0.3, retries=2, hf_token=""):
     """
     Call an LLM via the HuggingFace Inference API with retry logic.
 
@@ -27,11 +28,13 @@ def call_llm(model_id, system_prompt, user_content, max_tokens=2048, temperature
         max_tokens: Maximum tokens to generate
         temperature: Sampling temperature
         retries: Number of retry attempts on transient failure
+        hf_token: Per-user HF token (preferred over os.environ for multi-user safety)
 
     Returns:
         str: Generated text response
     """
-    token = get_hf_token()
+    # Per-user token takes priority; fall back to env var only for CLI/local use
+    token = hf_token or get_hf_token()
 
     if not token:
         return _fallback_response(user_content)
