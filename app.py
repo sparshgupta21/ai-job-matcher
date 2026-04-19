@@ -404,29 +404,27 @@ def create_app():
             </div>
         """)
 
-        # ── API Keys (open by default — users must enter their own) ──
-        with gr.Accordion("🔑 API Keys — Enter YOUR Keys to Use AI Features", open=True):
-            gr.Markdown(
-                "⚠️ **You must enter your own API keys.** Each user's tokens are used "
-                "privately for their session only — never stored, never shared. "
-                "Get a [free HF token](https://huggingface.co/settings/tokens) and "
-                "optionally a [free Tavily key](https://tavily.com) for real job search."
+        # ── API Keys (Required for AI features) ────────────────
+        gr.HTML('<span class="section-title">🔑 API Keys (Required)</span>')
+        gr.Markdown(
+            "⚠️ **Required**: Enter your HuggingFace token to enable AI analysis. "
+            "All keys are used in-memory only and never stored."
+        )
+        with gr.Row():
+            hf_token_input = gr.Textbox(
+                label="🤗 HuggingFace Token (Required)",
+                placeholder="hf_xxxxxxxxxxxxxxxxxxxx",
+                type="password",
+                info="Get free at huggingface.co/settings/tokens",
+                elem_id="hf-token-input",
             )
-            with gr.Row():
-                hf_token_input = gr.Textbox(
-                    label="HuggingFace Token",
-                    placeholder="hf_xxxxxxxxxxxxxxxxxxxx",
-                    type="password",
-                    info="Get free at huggingface.co/settings/tokens",
-                    elem_id="hf-token-input",
-                )
-                tavily_key_input = gr.Textbox(
-                    label="Tavily Search Key (optional)",
-                    placeholder="tvly-xxxxxxxxxx",
-                    type="password",
-                    info="Get free at tavily.com (1000 searches/month)",
-                    elem_id="tavily-key-input",
-                )
+            tavily_key_input = gr.Textbox(
+                label="🔍 Tavily Key (Optional - Better Results)",
+                placeholder="tvly-xxxxxxxxxx",
+                type="password",
+                info="Get free at tavily.com (1000 searches/month)",
+                elem_id="tavily-key-input",
+            )
 
         # ── Upload & Configure ─────────────────────────────────
         gr.HTML('<span class="section-title">📄 Upload & Configure</span>')

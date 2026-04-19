@@ -1,0 +1,22 @@
+# Deploy to HuggingFace Spaces on push to main
+
+name: Deploy to HF Spaces
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: huggingface/hub-actions@v1
+        with:
+          repo_id: sparsh21/AI_job_matcher
+          repo_type: space
+          username: sparsh21
+          token: ${{ secrets.HF_TOKEN }}
