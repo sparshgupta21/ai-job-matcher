@@ -17,7 +17,7 @@ short_description: Multi-Agent AI job matching with open-source LLMs
 
 Upload your CV, and 3 AI agents work together to analyze your profile, hunt for matching jobs across Indian portals (Naukri, LinkedIn, IIMJobs, Foundit), and prepare application packages with auto-fill data and tailored tips.
 
-[![Open in Spaces](https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-lg-dark.svg)](https://huggingface.co/spaces/sparshgupta21/ai-job-matcher)
+[![Open in Spaces](https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-lg-dark.svg)](https://huggingface.co/spaces/sparsh21/AI_job_matcher)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sparshgupta21/ai-job-matcher/blob/main/colab_notebook.ipynb)
 
 ---
