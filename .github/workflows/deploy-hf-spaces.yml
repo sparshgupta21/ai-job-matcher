@@ -8,39 +8,15 @@ on:
       - main
   workflow_dispatch:
 
-permissions:
-  contents: read
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: huggingface/hub-actions@v1
         with:
-          python-version: "3.11"
-
-      - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
-
-      - name: Deploy to HuggingFace Spaces
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: |
-          pip install huggingface_hub
-          python -c "
-import os
-from huggingface_hub import HfApi
-api = HfApi()
-api.upload_folder(
-    folder_path='.',
-    repo_id='sparsh21/AI_job_matcher',
-    repo_type='space',
-    token=os.environ['HF_TOKEN']
-)
-print('Deployed successfully!')
-"
+          repo_id: sparsh21/AI_job_matcher
+          repo_type: space
+          username: sparsh21
+          token: ${{ secrets.HF_TOKEN }}
