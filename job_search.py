@@ -56,14 +56,11 @@ def search_jobs_tavily(query, location="", job_type="", experience="",
         # Target India-first portals
         portal_sites = JOB_PORTAL_SITES_INDIA if include_india else JOB_PORTAL_SITES_GLOBAL
 
-        # Include domain hints in the query for better results
-        site_hint = " OR ".join([f"site:{s}" for s in portal_sites[:4]])
-        search_query_with_sites = f"{search_query} ({site_hint})"
-
         response = client.search(
-            query=search_query_with_sites,
+            query=search_query,
             search_depth="basic",
             max_results=min(num_results, MAX_TAVILY_RESULTS),
+            include_domains=portal_sites[:5],
             include_answer=False,
         )
 
